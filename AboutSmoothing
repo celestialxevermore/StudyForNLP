@@ -1,0 +1,45 @@
+### Smoothing 기법 : Laplace(add-one) smoothing, Back-off smoothing
+
+
+
+#### 1. Smoothing 기법의 개념
+- 통계적 언어모델과 N-gram 언어모델은 희소 문제가 발생하며, 이러한 문제를 해결하기 위한 generalization 기법으로 smoothing 기법이 있습니다.
+- 확률값이 0이 되지 않도록, 문장 생성 확률이 정의되지 않는 문제를 해결하기 위한 방법입니다.
+  we will have to shave off a bit of probability mass from some more frequent events and give it to the events we've never seen
+  : 자주 등장하는 확률 질량의 일부를 아예 일어나지 않은 이벤트에 할당 -> 0% 확률의 발생을 없앤다.
+- Smoothing 기법에는 크게 Lapace smoothing과 back-off smoothing 기법이 있습니다.
+
+
+##### 1) Laplace(add-one) smoothing
+- 단어의 출현 빈도에 1을 더하여 빈도가 0이 되는 경우가 없도록 한다. 단순하다. 그래서 add-one..
+- n-gram 언어 모델의 식에서, 분모에 단어 집합의 수를 더하고, 분자에 1을 더하여 표현한다. Why?
+- 이 때, N : 단어 집합의 모든 unigram 토큰 빈도 수의 합
+- V : 단어 집합의 전체 토큰 수
+  - 기존 unigram 식 : P(wi) = count(wi) / N
+  - 변형된 unigram 식 : Plp(wi) = count(wi)+1 / N+V
+  
+  - 기존 bigram 식 : P(Wn|Wn-1) = count(Wn|Wn-1) / count(Wn-1)
+  - 변형된 bigram 식 : Plp(Wn|Wn-1) = count(Wn|Wn-1)+1 / count(Wn-1)+V
+  
+
+#### 2) Back-off smoothing
+  - 학습 데이터에 출현하지 않는 n-gram의 확률을 (n-1)-gram의 확률로부터 추정하는 방법이다.
+  - 약간 수학적 귀납법과 비슷한 메커니즘 같다.
+  - n-gram으로 일반화된 back-off smoothing 기법의 식은 아래와 같다. 
+  - Pbo(Wn|Wn-N+1, ... , Wn-1) = { P(Wn|Wn-N+1,...,Wn-1), if count(Wn-1),...count(Wn) > 0
+                                   Pbo(Wn|Wn-N+2,...,Wn-1)
+  
+  
+  - 이 때 여러 n에 대한 n-gram 단어 집합을 함께 사용할 경우 전체 확률의 합이 1이 넘어버리는 문제가 발생한다.
+  - 그렇기 대문에 위의 식에 'discount'라는 개념을 추가해야 한다. 
+  - discount는 각 n-gram에 대하여 적절한 값을 곱하여 보정하는 역할로,
+  - 만약 Back-off를 적용할 때 Wn에 대한 빈도가 0이 아닌 경우, 해당 확률값을 그대로 사용하고,
+    만약 Wn에 대한 빈도가 0이어서, 한단계 낮은 n-gram에 대한 값을 사용해야 할 때, distribution function인 a를 곱해준다.
+    이러한 방식으로 distributino function을 적용한 개념을 Katz back-off라고 하며,
+    이를 적용한 식은 다음과 같다. 
+    
+    Pbo(Wn|Wn-N+1, ... , Wn-1) = { P(Wn|Wn-N+1,...,Wn-1), if count(Wn-1),...count(Wn) > 0
+                                   a(Wn-N+1,...,Wn-1)Pbo(Wn|Wn-N+2,...,Wn-1)
+    
+    이 때 a는 확률의 총합이 1이 되도록 하기 위한 정규화 계수이다. 
+    이 a는 재귀적 특성으로, 이전 n-gram의 정보를 사용한다. 
